@@ -1,35 +1,43 @@
+async function fetchJson(url) {
+    const response = await fetch(url);
+    const obj = await response.json();
+    return obj;
+}
 
 
 async function getDashboardData(query) {
 
-    // chiamate per dati generali città
 
-    const destinations = await fetch(`http://localhost:3333/destinations?search=${query}`)
-    const city = await destinations.json();
+    // Create promises for all fetch requests (destinations, weather, airports)
 
-    console.log('Città:', city[0].name);
-    console.log("Nazione: ", city[0].country);
-
-
-    // chiamate per reperire info meteo
-
-    const weathers = await fetch(`http://localhost:3333/weathers?search=${query}`)
-    const weather = await weathers.json();
-
-    console.log('La temperatura è di :', weather[0].temperature, "°");
-    console.log("Descrizione meteo:", weather[0].weather_description);
+    const destinationsPromise = fetchJson(`http://localhost:3333/destinations?search=${query}`);
+    const weathersPromise = fetchJson(`http://localhost:3333/weathers?search=${query}`);
+    const airportsPromise = fetchJson(`http://localhost:3333/airports?search=${query}`);
 
 
-    //  chiamate per reperire nome aereporto principale
+    // Run all promises  using Promise.all
+    const promises = [destinationsPromise, weathersPromise, airportsPromise];
+    const [destinations, weathers, airports] = await Promise.all(promises);
 
-    const airports = await fetch(`http://localhost:3333/airports?search=${query}`)
-    const airport = await airports.json();
 
-    console.log("Nome aereporto principale:", airport[0].name);
-
+    return {
+        city: destinations[0].name,
+        country: destinations[0].country,
+        temperature: weathers[0].temperature,
+        weather: weathers[0].weather_description,
+        airport: airports[0].name
+    }
 
 
 
 }
-
-getDashboardData('paris')
+getDashboardData('vienna')
+    .then(data => {
+        console.log('Dasboard data:', data);
+        console.log(
+            `${data.city} is in ${data.country}.\n` +
+            `Today there are ${data.temperature} degrees and the weather is ${data.weather}.\n` +
+            `The main airport is ${data.airport}.\n`
+        );
+    })
+    .catch(error => console.error(error));
